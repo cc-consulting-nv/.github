@@ -2,6 +2,11 @@ name: Sandtrace Security Scan
 
 on:
   workflow_call:
+    secrets:
+      SANDTRACE_API_KEY:
+        required: false
+      SANDTRACE_CLOUD_URL:
+        required: false
 
 permissions:
   contents: read
@@ -14,6 +19,9 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
+    env:
+      SANDTRACE_API_KEY: ${{ secrets.SANDTRACE_API_KEY }}
+      SANDTRACE_CLOUD_URL: ${{ secrets.SANDTRACE_CLOUD_URL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,6 +37,10 @@ jobs:
 
       - name: Run audit
         run: sandtrace audit . --severity medium
+
+      - name: Generate and upload SBOM
+        if: ${{ secrets.SANDTRACE_API_KEY != '' && secrets.SANDTRACE_CLOUD_URL != '' }}
+        run: sandtrace sbom . --output sandtrace.bom.json
 
       - name: Run obfuscation scan
         run: sandtrace scan . --verbose
