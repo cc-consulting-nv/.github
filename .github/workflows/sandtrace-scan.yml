@@ -40,7 +40,7 @@ jobs:
         run: sandtrace audit . --severity medium
 
       - name: Generate and upload SBOM
-        if: ${{ secrets.SANDTRACE_API_KEY != '' && secrets.SANDTRACE_CLOUD_URL != '' }}
+        if: ${{ env.SANDTRACE_API_KEY != '' && env.SANDTRACE_CLOUD_URL != '' }}
         run: sandtrace sbom . --output sandtrace.bom.json
 
       - name: Run obfuscation scan
