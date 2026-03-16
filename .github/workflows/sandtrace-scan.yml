@@ -41,7 +41,12 @@ jobs:
 
       - name: Generate and upload SBOM
         if: ${{ env.SANDTRACE_API_KEY != '' && env.SANDTRACE_CLOUD_URL != '' }}
-        run: sandtrace sbom . --output sandtrace.bom.json
+        run: |
+          if sandtrace --help | grep -q '\<sbom\>'; then
+            sandtrace sbom . --output sandtrace.bom.json
+          else
+            echo "Skipping SBOM upload: installed sandtrace release does not support the sbom subcommand."
+          fi
 
       - name: Run obfuscation scan
         run: sandtrace scan . --verbose
