@@ -2,6 +2,10 @@ name: Sandtrace Security Scan
 
 on:
   workflow_call:
+    inputs:
+      sandtrace_cloud_url:
+        required: false
+        type: string
     secrets:
       SANDTRACE_API_KEY:
         required: false
@@ -22,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SANDTRACE_API_KEY: ${{ secrets.SANDTRACE_API_KEY }}
-      SANDTRACE_CLOUD_URL: ${{ secrets.SANDTRACE_CLOUD_URL }}
+      SANDTRACE_CLOUD_URL: ${{ inputs.sandtrace_cloud_url || secrets.SANDTRACE_CLOUD_URL }}
     steps:
       - uses: actions/checkout@v4
 
