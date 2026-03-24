@@ -18,7 +18,7 @@ permissions:
   security-events: write
 
 env:
-  SANDTRACE_VERSION: '0.3.0'
+  SANDTRACE_VERSION: '0.3.4'
 
 jobs:
   security-scan:
