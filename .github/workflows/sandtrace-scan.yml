@@ -9,7 +9,7 @@ on:
       deep:
         required: false
         type: boolean
-        default: true
+        default: false
     secrets:
       SANDTRACE_API_KEY:
         required: false
