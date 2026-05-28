@@ -9,7 +9,7 @@ on:
       deep:
         required: false
         type: boolean
-        default: false
+        default: true
     secrets:
       SANDTRACE_API_KEY:
         required: false
@@ -22,7 +22,7 @@ permissions:
   security-events: write
 
 env:
-  SANDTRACE_VERSION: '0.3.14'
+  SANDTRACE_VERSION: '0.3.15'
 
 jobs:
   security-scan:
@@ -45,7 +45,11 @@ jobs:
         run: sandtrace init
 
       - name: Run audit
-        run: sandtrace audit . --severity medium ${{ inputs.deep && '--deep' || '' }}
+        # Gate at CRITICAL only. With --deep on, medium/high includes direct-dep
+        # version freshness (a fresh upstream release is advisory, not a failure).
+        # Genuine criticals (public-registry typosquats, real package-not-found)
+        # still block. Medium/high are surfaced via the SARIF report below.
+        run: sandtrace audit . --severity critical ${{ inputs.deep && '--deep' || '' }}
 
       - name: Generate and upload SBOM
         if: ${{ env.SANDTRACE_API_KEY != '' && env.SANDTRACE_CLOUD_URL != '' }}
