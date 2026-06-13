@@ -15,11 +15,6 @@ on:
         required: false
       SANDTRACE_CLOUD_URL:
         required: false
-      SANDTRACE_DOWNLOAD_TOKEN:
-        # PAT with read access to the private cc-consulting-nv/sandtrace repo,
-        # used to download the release binary. Optional: when omitted the job's
-        # GITHUB_TOKEN is used (works only if the caller's token can read it).
-        required: false
 
 permissions:
   actions: read
@@ -28,9 +23,11 @@ permissions:
 
 env:
   SANDTRACE_VERSION: '0.3.19'
-  # Releases live on the private cc-consulting-nv/sandtrace fork; the public
-  # upstream lags (manual promotion gate). Download with gh + GITHUB_TOKEN.
-  SANDTRACE_REPO: 'cc-consulting-nv/sandtrace'
+  # Public upstream release. Downloaded unauthenticated, so any caller repo
+  # works with no PAT wiring. (The private cc-consulting-nv/sandtrace fork is
+  # unreachable from a caller's repo-scoped GITHUB_TOKEN; that previously broke
+  # every scan with "Could not resolve to a Repository".)
+  SANDTRACE_REPO: 'sandtrace/sandtrace'
 
 jobs:
   security-scan:
@@ -43,21 +40,21 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install sandtrace
-        # cc-consulting-nv/sandtrace is private, so the release asset is fetched
-        # with gh (authenticated). SANDTRACE_DOWNLOAD_TOKEN is a PAT with read
-        # access to that repo; falls back to the job's GITHUB_TOKEN when the
-        # caller lives in the same org and has access.
-        env:
-          GH_TOKEN: ${{ secrets.SANDTRACE_DOWNLOAD_TOKEN || secrets.GITHUB_TOKEN }}
+        # Fetched from the public upstream release over plain HTTPS — no token.
+        # The binary is checksum-verified against the published SHA-256 manifest
+        # before it runs (it's a security tool; don't execute an unverified blob).
         run: |
-          asset="sandtrace-v${SANDTRACE_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
-          gh release download "v${SANDTRACE_VERSION}" \
-            --repo "${SANDTRACE_REPO}" \
-            --pattern "${asset}" \
-            --output sandtrace.tar.gz
-          tar xzf sandtrace.tar.gz
-          sudo mv "sandtrace-v${SANDTRACE_VERSION}-x86_64-unknown-linux-gnu/sandtrace" /usr/local/bin/
-          rm -rf sandtrace.tar.gz "sandtrace-v${SANDTRACE_VERSION}-x86_64-unknown-linux-gnu"
+          dir="sandtrace-v${SANDTRACE_VERSION}-x86_64-unknown-linux-gnu"
+          asset="${dir}.tar.gz"
+          base="https://github.com/${SANDTRACE_REPO}/releases/download/v${SANDTRACE_VERSION}"
+          # Download the tarball under its real release name so the published
+          # checksum line (`<sha256>  <asset>`) verifies as-is via `sha256sum -c`.
+          curl -fsSL "${base}/${asset}" -o "${asset}"
+          curl -fsSL "${base}/sandtrace-v${SANDTRACE_VERSION}-checksums-sha256.txt" -o sandtrace.sha256
+          grep "  ${asset}$" sandtrace.sha256 | sha256sum -c -
+          tar xzf "${asset}"
+          sudo mv "${dir}/sandtrace" /usr/local/bin/
+          rm -rf "${asset}" sandtrace.sha256 "${dir}"
           sandtrace --version
 
       - name: Initialize sandtrace
