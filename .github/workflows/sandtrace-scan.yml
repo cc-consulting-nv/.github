@@ -22,7 +22,7 @@ permissions:
   security-events: write
 
 env:
-  SANDTRACE_VERSION: '0.3.20'
+  SANDTRACE_VERSION: '0.3.23'
   # Public upstream release. Downloaded unauthenticated, so any caller repo
   # works with no PAT wiring. (The private cc-consulting-nv/sandtrace fork is
   # unreachable from a caller's repo-scoped GITHUB_TOKEN; that previously broke
